@@ -1,7 +1,6 @@
 package tutorialjava;
 
 import Koneksi.koneksi;
-import Koneksi.koneksi;
 import static Koneksi.koneksi.Koneksi;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -26,6 +25,9 @@ public class FormSiswa extends JFrame {
     private JButton btnSimpan, btnHapus, btnUpdate, btnReset;
     private JTable tableSiswa;
     private DefaultTableModel tableModel;
+    
+    // Variabel tambahan untuk menampung NIS lama saat tabel diklik
+    private String oldNis = ""; 
 
     public FormSiswa() {
         // Pengaturan dasar JFrame
@@ -37,12 +39,11 @@ public class FormSiswa extends JFrame {
 
         // --- 1. JUDUL ---
         lblTitle = new JLabel("Form Siswa");
-        lblTitle.setFont(new Font("Segoe UI", Font.PLAIN, 26)); // Font disesuaikan agar mirip gambar
+        lblTitle.setFont(new Font("Segoe UI", Font.PLAIN, 26)); 
         lblTitle.setBounds(50, 20, 200, 40);
         add(lblTitle);
 
         // --- 2. INPUT SEBELAH KIRI ---
-        // Penempatan digeser agar presisi dengan gambar
         lblNis = new JLabel("NIS");
         lblNis.setHorizontalAlignment(SwingConstants.RIGHT);
         lblNis.setBounds(20, 80, 70, 25);
@@ -85,11 +86,10 @@ public class FormSiswa extends JFrame {
         add(lblAlamat);
         txtAlamat = new JTextArea();
         scrollAlamat = new JScrollPane(txtAlamat);
-        scrollAlamat.setBounds(100, 220, 240, 100); // Diperlebar sedikit sesuai gambar
+        scrollAlamat.setBounds(100, 220, 240, 100); 
         add(scrollAlamat);
 
         // --- 3. TOMBOL (BUTTONS) ---
-        // Disusun sejajar 2x2 pas di bawah kotak alamat
         btnSimpan = new JButton("Simpan");
         btnSimpan.setBounds(100, 335, 115, 25);
         add(btnSimpan);
@@ -110,20 +110,16 @@ public class FormSiswa extends JFrame {
         String[] kolom = {"NIS", "Nama", "Jurusan", "JK", "Alamat"};
         tableModel = new DefaultTableModel(kolom, 0);
         tableSiswa = new JTable(tableModel);
-        
-        // Mengatur tinggi baris tabel agar terlihat mirip di gambar
         tableSiswa.setRowHeight(25);
-        
         scrollTable = new JScrollPane(tableSiswa);
-        scrollTable.setBounds(360, 80, 450, 315); // Lebar dan tinggi disesuaikan
+        scrollTable.setBounds(360, 80, 450, 315); 
         add(scrollTable);
 
-        // --- 5. TAMPILKAN DATA SAAT APLIKASI DIBUKA ---
         tampilData();
 
-        // --- 6. LOGIKA TOMBOL (CRUD) ---
+        // --- 5. LOGIKA TOMBOL (CRUD) ---
         
-        // A. TOMBOL SIMPAN
+        // TOMBOL SIMPAN
         btnSimpan.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -148,7 +144,7 @@ public class FormSiswa extends JFrame {
             }
         });
 
-        // B. TOMBOL RESET
+        // TOMBOL RESET
         btnReset.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -156,35 +152,43 @@ public class FormSiswa extends JFrame {
             }
         });
 
-        // C. KLIK TABEL
+        // KLIK TABEL
         tableSiswa.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 int baris = tableSiswa.getSelectedRow();
-                txtNis.setText(tableModel.getValueAt(baris, 0).toString());
+                
+                // Ambil NIS lama dari tabel dan simpan ke variabel oldNis
+                oldNis = tableModel.getValueAt(baris, 0).toString();
+                
+                txtNis.setText(oldNis);
                 txtNama.setText(tableModel.getValueAt(baris, 1).toString());
                 cbJurusan.setSelectedItem(tableModel.getValueAt(baris, 2).toString());
                 cbJk.setSelectedItem(tableModel.getValueAt(baris, 3).toString());
                 txtAlamat.setText(tableModel.getValueAt(baris, 4).toString());
                 
-                txtNis.setEditable(false); 
+                // SEKARANG DIBUAT TRUE: Supaya kotak NIS tetap bisa diketik/diedit
+                txtNis.setEditable(true); 
             }
         });
         
-        // D. TOMBOL UPDATE
+        // TOMBOL UPDATE
         btnUpdate.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 try {
                     Connection cn = koneksi.Koneksi();
-                    String sql = "UPDATE students SET nama=?, jurusan=?, jk=?, alamat=? WHERE nis=?";
+                    
+                    // QUERY DIUBAH: 'nis' ikut di-SET baru, dicari berdasarkan NIS LAMA
+                    String sql = "UPDATE students SET nis=?, nama=?, jurusan=?, jk=?, alamat=? WHERE nis=?";
                     PreparedStatement pst = cn.prepareStatement(sql);
                     
-                    pst.setString(1, txtNama.getText());
-                    pst.setString(2, cbJurusan.getSelectedItem().toString());
-                    pst.setString(3, cbJk.getSelectedItem().toString());
-                    pst.setString(4, txtAlamat.getText());
-                    pst.setString(5, txtNis.getText()); 
+                    pst.setString(1, txtNis.getText()); // NIS Baru yang diketik
+                    pst.setString(2, txtNama.getText());
+                    pst.setString(3, cbJurusan.getSelectedItem().toString());
+                    pst.setString(4, cbJk.getSelectedItem().toString());
+                    pst.setString(5, txtAlamat.getText());
+                    pst.setString(6, oldNis); // Menggunakan NIS Lama sebagai patokan WHERE
                     
                     pst.executeUpdate();
                     JOptionPane.showMessageDialog(null, "Data Berhasil Diupdate");
@@ -196,7 +200,7 @@ public class FormSiswa extends JFrame {
             }
         });
 
-        // E. TOMBOL HAPUS
+        // TOMBOL HAPUS
         btnHapus.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -250,6 +254,7 @@ public class FormSiswa extends JFrame {
         cbJk.setSelectedIndex(0);
         txtAlamat.setText("");
         txtNis.setEditable(true); 
+        oldNis = ""; // Kosongkan kembali variabel NIS lama
     }
 
     public static void main(String[] args) {
